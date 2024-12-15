@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useContext, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -12,17 +12,36 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AddNewUserFormControls, AddNewUserFormInitialState } from "@/utils";
+import { AddNewUserAction, EditUserAction } from "@/actions";
+import { UserContext } from "@/context";
 
 const AddNewUser = () => {
-  const [openPopup, setOpenPopup] = useState(false);
-  const [addNewUserFormData, setAddNewUserFormData] = useState(
-    AddNewUserFormInitialState
-  );
+  const {
+    openPopup,
+    setOpenPopup,
+    addNewUserFormData,
+    setAddNewUserFormData,
+    currentEditedID,
+    setCurrentEditedID,
+  } = useContext(UserContext);
 
   const handleSaveButtonValid = () => {
     return Object.keys(addNewUserFormData).every(
       (key) => addNewUserFormData[key].trim() == ""
     );
+  };
+
+  const handleAddNewUserAction = async () => {
+    currentEditedID !== null
+      ? await EditUserAction(
+          currentEditedID,
+          addNewUserFormData,
+          "/user-management"
+        )
+      : await AddNewUserAction(addNewUserFormData, "/user-management");
+    setOpenPopup(false);
+    setAddNewUserFormData(AddNewUserFormInitialState);
+    setCurrentEditedID(null);
   };
 
   return (
@@ -33,13 +52,16 @@ const AddNewUser = () => {
         onOpenChange={() => {
           setOpenPopup(false);
           setAddNewUserFormData(AddNewUserFormInitialState);
+          setCurrentEditedID(null);
         }}
       >
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Add New User</DialogTitle>
+            <DialogTitle>
+              {currentEditedID !== null ? "Edit User" : "Add New User"}
+            </DialogTitle>
           </DialogHeader>
-          <form className="grid gap-4 py-4">
+          <form action={handleAddNewUserAction} className="grid gap-4 py-4">
             {AddNewUserFormControls.map((controlItem) => (
               <div key={controlItem.name} className="mb-4">
                 <Label htmlFor={controlItem.name} className="text-left">
@@ -61,12 +83,12 @@ const AddNewUser = () => {
                 />
               </div>
             ))}
+            <DialogFooter>
+              <Button disabled={handleSaveButtonValid()} type="submit">
+                Save
+              </Button>
+            </DialogFooter>
           </form>
-          <DialogFooter>
-            <Button disabled={handleSaveButtonValid()} type="submit">
-              Save
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
